@@ -4,7 +4,8 @@ import { stripe } from "../../../services/stripe";
 
 export async function saveSubscription(
   subscriptionId: string,
-  customerId: string
+  customerId: string,
+  createAction = false
 ) {
   console.log(
     "iniciooooo ----------------" + subscriptionId + " | " + customerId
@@ -17,22 +18,44 @@ export async function saveSubscription(
       )
     )
   );
-  console.log("parte 1 ");
-  console.log("siume", useRef);
+
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-  console.log("subscription", subscription);
+
   const subscriptionData = {
     id: subscription.id,
     userId: useRef,
     status: subscription.status,
     prices_id: subscription.items.data[0].price.id,
   };
-  console.log("dados", subscriptionData);
-  await fauna.query(
-    query.Create(query.Collection("subscriptions"), {
-      data: subscriptionData,
-    })
-  );
+
+  if (createAction) {
+    console.log("inicio da acao");
+    await fauna.query(
+      query.If(
+        query.Not(
+          query.Exists(
+            query.Match(query.Index("subscription_by_id"), subscription.id)
+          )
+        ),
+        query.Create(query.Collection("subscriptions"), {
+          data: subscriptionData,
+        }),
+        null
+      )
+    );
+  } else {
+    await fauna.query(
+      query.Replace(
+        query.Select(
+          "ref",
+          query.Get(
+            query.Match(query.Index("subscription_by_id"), subscriptionId)
+          )
+        ),
+        { data: subscriptionData }
+      )
+    );
+  }
 }
 
 //Buscar o usuario no banco com o id (customer_id)

@@ -8,6 +8,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@prismicio/client": "^6.1.0",
+    "@prismicio/helpers": "^2.0.0",
     "@stripe/stripe-js": "^1.22.0",
     "@types/react": "^17.0.38",
     "axios": "^0.25.0",
